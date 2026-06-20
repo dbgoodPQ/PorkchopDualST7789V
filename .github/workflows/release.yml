@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Update custom_version in platformio.ini
+        run: sed -i "s/^custom_version = .*/custom_version = $VERSION/" platformio.ini
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build release binaries
+        run: python scripts/build_release.py
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            **Upgrade (preserves XP/saves):** Flash `firmware_v${{ env.VERSION }}.bin` at `0x10000` via [esptool-js](https://espressif.github.io/esptool-js/)
+
+            **Fresh install:** Flash `porkchop_v${{ env.VERSION }}_m5burner.bin` at `0x0` via M5 Burner (resets NVS)
+
+            **M5Burner catalog:** Use `porkchop_v${{ env.VERSION }}_m5burner.zip`
+          files: |
+            m5porkchop_builds/firmware_v${{ env.VERSION }}.bin
+            m5porkchop_builds/porkchop_v${{ env.VERSION }}_m5burner.bin
+            m5porkchop_builds/porkchop_v${{ env.VERSION }}_m5burner.zip

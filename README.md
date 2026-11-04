@@ -1,60 +1,75 @@
-This is my Dual Screen port of M5Porkchop!  I've added some cool stuff since the video, so enjoy!
+# PorkchopDualST7789V
 
+A fork of [skizzophrenic/M5PORKCHOP_DualScreen](https://github.com/skizzophrenic/M5PORKCHOP_DualScreen)
+that switches the external screen from an ILI9341 to a **Waveshare 2inch LCD module (ST7789V, 240x320)**.
 
-M5PORKCHOP: Embedded RF Protocol Analysis & Visualization Suite
-An advanced, open-source firmware suite developed for the ESP32-S3 architecture (specifically optimized for the M5Stack Cardputer platform). This project serves as a technical demonstration of real-time 802.11 protocol auditing, Bluetooth Low Energy (BLE) beacon telemetry analysis, and high-performance embedded UI rendering.
+Target device: **M5Stack Cardputer**. The dual-screen UI is unchanged from the upstream fork; only the
+external panel driver and its settings differ.
 
-Designed strictly for Educational, Security, Defense, and Awareness (ESDA) framework compliance, network administrators, and embedded systems developers.
+## What changed
 
-🔬 Core Architecture & Features
-1. Passive 802.11 Protocol Auditing
-Frame Density Mapping: Real-time passive observation of 802.11 management and data frame distribution across the 2.4GHz spectrum.
+- The external panel uses LovyanGFX's built-in `Panel_ST7789` instead of the hand-written ILI9341 init table.
+- `invert = true` (the ST7789V needs inverted colours) and `freq_write = 40 MHz`.
+- Rotation 7 is kept (the scaled-push geometry is tuned for it). The ST7789V's left/right mirror is undone in
+  software with `EXT_FLIP_X`.
 
-RSSI Propagation Tracking: Diagnostic logging of Received Signal Strength Indicator (RSSI) metrics to analyze RF attenuation and signal boundary degradation.
+All settings are in `src/ui/ext_display.h`.
 
-Network Topology Mapping: Passive parsing of publicly broadcast beacon frames to inventory authorized infrastructure and audit baseline security posture.
+## Dual-screen layout
 
-2. BLE Telemetry & Advertising Analysis
-Beacon Inventory: Passive discovery and classification of Bluetooth Low Energy (BLE) advertising channels.
+- **External screen (320x240 landscape):** action modes (IDLE, OINK, DNH, WARHOG, PIGGYBLUES, SPECTRUM, BACON,
+  FILE_TRANSFER, PIGSYNC, CHARGING) run full-screen, scaled to fit, with thin effect bands top and bottom.
+  In the menu it shows a full-screen Matrix rain with an animated pig.
+- **Built-in screen:** always shows the current view, including the menu and all text screens
+  (Settings, Captures, Stats, and so on).
+- Cycle the band effects with `,` and `/` in action modes.
 
-Protocol Frame Parsing: Real-time decoding of localized GATT services and peripheral broadcast payloads for diagnostic optimization.
+## Wiring (Cardputer EXT header → Waveshare 2inch)
 
-Transmission Stress-Testing: Utilities for generating localized broadcast packets to evaluate receiver-side queue handling and buffer allocation under dense signal environments.
+| Waveshare pin | Cardputer GPIO | Notes |
+| --- | --- | --- |
+| DIN (MOSI) | G14 | shared with the SD card |
+| CLK (SCK) | G40 | shared with the SD card |
+| CS | G5 | |
+| DC | G6 | |
+| RST | G3 | |
+| BL | 3V3 | always on |
+| VCC | 3V3 | set the module's voltage selector to 3.3V |
+| GND | GND | |
 
-3. High-Performance Embedded UI Engine
-Waterfall Signal Display: A mathematically optimized, real-time visual representation of spectrum density utilizing custom sinc-function rendering pipelines.
+MISO is not connected.
 
-Advanced Heap Management: Custom memory allocation paradigms utilizing Knuth's 50% rule optimization to maximize stability on restricted hardware layouts.
+**Before flashing:** turn GPS off in Settings. With no GPS module, it would drive GPIO 3/5/6 (the panel's RST/DC/CS).
 
-Hardware Interfacing: Full integration with onboard IMU sensors, power-management ICs (PMIC), and physical keyboard matrix polling routines.
+## Build and flash
 
-🛠️ Hardware Requirements
-This firmware is engineered to interface directly with the following hardware specifications:
+With VS Code and the PlatformIO extension:
 
-Core Development Host: M5Stack Cardputer (ESP32-S3 Dual-Core Xtensa LX7 processor)
+```
+git clone https://github.com/dbgoodPQ/PorkchopDualST7789V
+cd PorkchopDualST7789V
+pio run -e m5cardputer -t upload
+```
 
-Storage / Logs: MicroSD Card slot (FAT32 formatted for passive text/log extraction)
+The **build** GitHub Action also produces `firmware.bin` as a downloadable artifact.
 
-Optional Diagnostics: Compatible external antenna arrays for directional RF propagation mapping.
+## If something looks wrong
 
-🚀 Installation & Flashing
-Option A: VS Code & PlatformIO (Recommended)
-Clone this repository to your local workspace.
+| Symptom | Try |
+| --- | --- |
+| Colours look like a photo negative | Toggle `invert` in `src/ui/ext_display.h` |
+| Red and blue swapped | Toggle `rgb_order` |
+| Picture mirrored left/right | Toggle `EXT_FLIP_X` |
+| SD card errors or garbled picture | Lower `freq_write` (for example to 27 MHz) |
 
-Open the project folder inside Visual Studio Code with the PlatformIO extension installed.
+Implementation notes, effects and tuning options are in [EXT_DISPLAY_NOTES.md](EXT_DISPLAY_NOTES.md).
 
-Connect your hardware via a verified USB-C data cable.
+## Disclaimer
 
-Execute the PlatformIO: Upload task to compile and flash the binary.
+This firmware is for education and authorised security testing only. You are responsible for following
+the radio and privacy laws where you use it.
 
-Option B: Arduino IDE
-Ensure the esp32 board manager URL is added to your preferences.
+## Credits
 
-Install the required dependencies: M5Cardputer, M5GFX, and standard WiFi / BLE libraries.
-
-Configure target board settings: ESP32S3 Dev Module with enabled USB CDC on boot.
-
-Compile and upload.
-
-⚠️ Regulatory Compliance & Disclaimer
-Important Notice: This software is an educational framework designed exclusively for passive RF diagnostic analysis, protocol auditing, and defensive infrastructure validation. Users are entirely responsible for ensuring that any deployment complies with local, national, and international telecommunications regulations (including FCC, ETSI, and local data privacy laws). The authors assume no liability for misuse, unintended cross-talk, or unauthorized utilization of packet generation utilities.
+M5PORKCHOP by 0ct0 and the dual-screen port by
+[skizzophrenic](https://github.com/skizzophrenic/M5PORKCHOP_DualScreen). MIT License — see [LICENSE](LICENSE).

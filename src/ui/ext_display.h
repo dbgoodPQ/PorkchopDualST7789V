@@ -30,13 +30,16 @@
 
 // ---- Display rotation (easy knob) ----------------------------------
 // LovyanGFX rotations: 0-3 = 0/90/180/270; 4-7 = the same but H-mirrored.
-// Landscape 320x240 values are 1, 3 (no mirror) and 5, 7 (mirrored).
-// The ILI9341 build used 7. On ST7789V try these if the image is wrong:
-//   1 = landscape, no mirror            (default here)
-//   3 = landscape, no mirror, 180° flip (use if rot 1 is upside-down)
-//   5 / 7 = mirrored versions of 1 / 3  (right-to-left text)
-// Just change this one number and re-flash.
-static constexpr uint8_t EXT_ROTATION = 1;
+// Porkchop's scaled-push geometry is tuned for rotation 7 (the value the
+// ILI9341 build used); other landscape values (1/3) left the live screen
+// blank even though the panel itself works. So we KEEP rotation 7 and undo
+// the ST7789V's right-to-left mirror in software via EXT_FLIP_X below.
+static constexpr uint8_t EXT_ROTATION = 7;
+
+// ST7789V renders rotation 7 mirrored vs the ILI9341. EXT_FLIP_X horizontally
+// flips the scaled content strips (the pig, menus, action visuals) to read
+// left-to-right again. Set false to go back to the raw (mirrored) output.
+static constexpr bool EXT_FLIP_X = true;
 
 // Native-clone placement (used only as a heap fallback if scaling can't alloc).
 static constexpr int EXT_CLONE_OX = 40;   // (320 - 240) / 2

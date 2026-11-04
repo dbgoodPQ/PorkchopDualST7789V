@@ -609,7 +609,10 @@ static void scaleStripToPanel(M5Canvas& c, int compTopY) {
     const float z = 320.0f / (float)DISPLAY_W;                 // 240 -> 320 wide
     float compCenterY = compTopY + c.height() / 2.0f;
     float dstCenterY  = 120.0f + (compCenterY - DISPLAY_H / 2.0f) * z;  // 135 tall -> centered
-    c.pushRotateZoom(&extDisplay, 160.0f, dstCenterY, 0.0f, z, z);
+    // Negative X zoom mirrors the sprite around its pivot (its center), which
+    // cancels the ST7789V's right-to-left mirror while keeping it centered.
+    const float zx = EXT_FLIP_X ? -z : z;
+    c.pushRotateZoom(&extDisplay, 160.0f, dstCenterY, 0.0f, zx, z);
 }
 void extPushScaledFit(M5Canvas& top, M5Canvas& main, M5Canvas& bottom) {
     menuBaseDrawn = false;                                      // content overwrote the menu pig

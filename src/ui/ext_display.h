@@ -5,7 +5,7 @@
 // Dual-screen mode: action modes render full-screen (fit) on the TFT; the
 // built-in screen always shows the current view natively (incl. the menu).
 //
-// Config: rotation 3 (landscape 320x240), invert=true (ST7789 default),
+// Config: rotation via EXT_ROTATION (landscape 320x240), invert=true (ST7789 default),
 // rgb_order=false. Shares the SD card's SPI bus -> FSPI/SPI2_HOST, bus_shared=true.
 //
 // Wiring (EXT header): CS=GPIO5 RST=GPIO3 DC=GPIO6 MOSI=GPIO14 SCK=GPIO40
@@ -27,6 +27,16 @@
 
 #include <M5Unified.h>
 #include <lgfx/v1/panel/Panel_ST7789.hpp>
+
+// ---- Display rotation (easy knob) ----------------------------------
+// LovyanGFX rotations: 0-3 = 0/90/180/270; 4-7 = the same but H-mirrored.
+// Landscape 320x240 values are 1, 3 (no mirror) and 5, 7 (mirrored).
+// The ILI9341 build used 7. On ST7789V try these if the image is wrong:
+//   1 = landscape, no mirror            (default here)
+//   3 = landscape, no mirror, 180° flip (use if rot 1 is upside-down)
+//   5 / 7 = mirrored versions of 1 / 3  (right-to-left text)
+// Just change this one number and re-flash.
+static constexpr uint8_t EXT_ROTATION = 1;
 
 // Native-clone placement (used only as a heap fallback if scaling can't alloc).
 static constexpr int EXT_CLONE_OX = 40;   // (320 - 240) / 2

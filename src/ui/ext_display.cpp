@@ -591,9 +591,7 @@ static void extDrawBands() {
 // ---------------- Public API ----------------
 void extInit() {
     extDisplay.init();
-    extDisplay.setRotation(3);   // ST7789V: rot 3 = landscape, no H-mirror.
-                                 // (ILI9341 used rot 7 = rot 3 + horizontal mirror;
-                                 //  ST7789's opposite handedness made 7 read right-to-left.)
+    extDisplay.setRotation(EXT_ROTATION);   // see EXT_ROTATION in ext_display.h
     extDisplay.setColorDepth(MATRIX_RICH ? 16 : 8);
     extDisplay.fillScreen(TFT_BLACK);
 }

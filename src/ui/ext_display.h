@@ -5,7 +5,7 @@
 // Dual-screen mode: action modes render full-screen (fit) on the TFT; the
 // built-in screen always shows the current view natively (incl. the menu).
 //
-// Config: rotation 7 (landscape 320x240), invert=true (ST7789 default),
+// Config: rotation 3 (landscape 320x240), invert=true (ST7789 default),
 // rgb_order=false. Shares the SD card's SPI bus -> FSPI/SPI2_HOST, bus_shared=true.
 //
 // Wiring (EXT header): CS=GPIO5 RST=GPIO3 DC=GPIO6 MOSI=GPIO14 SCK=GPIO40

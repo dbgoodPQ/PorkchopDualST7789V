@@ -1,65 +1,47 @@
 #ifndef PORK_EXT_DISPLAY_H
 #define PORK_EXT_DISPLAY_H
 
-// External 2.8" ILI9341 (240x320) display for M5PORKCHOP on Cardputer-ADV.
+// External 2.0"/2.4" ST7789V (240x320) display for M5PORKCHOP on Cardputer-ADV.
 // Dual-screen mode: action modes render full-screen (fit) on the TFT; the
 // built-in screen always shows the current view natively (incl. the menu).
 //
-// Proven config: rotation 7 (landscape 320x240), rgb_order=false.
-// Shares the SD card's SPI bus -> FSPI/SPI2_HOST, bus_shared=true.
+// Config: rotation 7 (landscape 320x240), invert=true (ST7789 default),
+// rgb_order=false. Shares the SD card's SPI bus -> FSPI/SPI2_HOST, bus_shared=true.
 //
 // Wiring (EXT header): CS=GPIO5 RST=GPIO3 DC=GPIO6 MOSI=GPIO14 SCK=GPIO40
+//
+// ====================================================================
+// PORTED FROM ILI9341 -> ST7789V
+// --------------------------------------------------------------------
+// The whole UI is built for a 320x240 LANDSCAPE panel, so this expects a
+// 240x320 ST7789V module (the common 2.0" / 2.4" boards). LovyanGFX ships a
+// built-in Panel_ST7789 with its own init sequence, so no hand-rolled command
+// table is needed (unlike the ILI9341, which M5GFX had no panel class for).
+//
+// If your image looks like a photo-negative: toggle `invert`.
+// If red/blue are swapped:                    toggle `rgb_order`.
+// If you have a 240x240 or 240x135 ST7789V:   set panel_width/height and the
+//   offset_x/offset_y for your module -- and note the landscape layout/scale
+//   constants assume 240x320, so a smaller panel needs layout rework too.
+// ====================================================================
 
 #include <M5Unified.h>
-#include <lgfx/v1/panel/Panel_LCD.hpp>
+#include <lgfx/v1/panel/Panel_ST7789.hpp>
 
 // Native-clone placement (used only as a heap fallback if scaling can't alloc).
 static constexpr int EXT_CLONE_OX = 40;   // (320 - 240) / 2
 static constexpr int EXT_CLONE_OY = 52;   // (240 - 135) / 2
 
-// ---- Local ILI9341 panel (M5GFX has no Panel_ILI9341; subclass Panel_LCD) ----
-struct Panel_ILI9341_Pork : public lgfx::v1::Panel_LCD {
-    Panel_ILI9341_Pork(void) {
-        _cfg.memory_width  = _cfg.panel_width  = 240;
-        _cfg.memory_height = _cfg.panel_height = 320;
-    }
-protected:
-    const uint8_t* getInitCommands(uint8_t listno) const override {
-        static constexpr uint8_t list0[] = {
-            0xEF, 3, 0x03, 0x80, 0x02,
-            0xCF, 3, 0x00, 0xC1, 0x30,
-            0xED, 4, 0x64, 0x03, 0x12, 0x81,
-            0xE8, 3, 0x85, 0x00, 0x78,
-            0xCB, 5, 0x39, 0x2C, 0x00, 0x34, 0x02,
-            0xF7, 1, 0x20,
-            0xEA, 2, 0x00, 0x00,
-            0xC0, 1, 0x23,
-            0xC1, 1, 0x10,
-            0xC5, 2, 0x3E, 0x28,
-            0xC7, 1, 0x86,
-            0xB1, 2, 0x00, 0x18,
-            0xB6, 3, 0x08, 0x82, 0x27,
-            0xF2, 1, 0x00,
-            0x26, 1, 0x01,
-            0xE0, 15, 0x0F,0x31,0x2B,0x0C,0x0E,0x08,0x4E,0xF1,0x37,0x07,0x10,0x03,0x0E,0x09,0x00,
-            0xE1, 15, 0x00,0x0E,0x14,0x03,0x11,0x07,0x31,0xC1,0x48,0x08,0x0F,0x0C,0x31,0x36,0x0F,
-            CMD_SLPOUT, CMD_INIT_DELAY, 120,
-            CMD_DISPON, CMD_INIT_DELAY, 120,
-            0xFF, 0xFF
-        };
-        return (listno == 0) ? list0 : nullptr;
-    }
-};
-
-class LGFX_ExtILI9341 : public lgfx::v1::LGFX_Device {
-    Panel_ILI9341_Pork _panel_instance;
-    lgfx::v1::Bus_SPI   _bus_instance;
+// ---- External ST7789V panel (uses LovyanGFX's built-in Panel_ST7789) ----
+class LGFX_ExtST7789V : public lgfx::v1::LGFX_Device {
+    lgfx::v1::Panel_ST7789 _panel_instance;
+    lgfx::v1::Bus_SPI      _bus_instance;
 public:
-    LGFX_ExtILI9341() {
+    LGFX_ExtST7789V() {
         {   auto cfg = _bus_instance.config();
             cfg.spi_host    = SPI2_HOST;     // FSPI — SAME host as the SD card
             cfg.spi_mode    = 0;
-            cfg.freq_write  = 27000000;
+            cfg.freq_write  = 40000000;      // ST7789 tolerates 40MHz; watch SD stability
             cfg.freq_read   = 16000000;
             cfg.spi_3wire   = true;
             cfg.use_lock    = true;
@@ -85,8 +67,8 @@ public:
             cfg.dummy_read_pixel = 8;
             cfg.dummy_read_bits  = 1;
             cfg.readable         = false;
-            cfg.invert           = false;
-            cfg.rgb_order        = false;
+            cfg.invert           = true;     // ST7789 defaults to inverted (ILI9341 was false)
+            cfg.rgb_order        = false;    // flip to true if red/blue are swapped
             cfg.dlen_16bit       = false;
             cfg.bus_shared       = true;     // shared with SD card
             _panel_instance.config(cfg);
@@ -95,7 +77,10 @@ public:
     }
 };
 
-extern LGFX_ExtILI9341 extDisplay;
+// Back-compat alias so existing references (ext_display.cpp) keep compiling.
+using LGFX_ExtILI9341 = LGFX_ExtST7789V;
+
+extern LGFX_ExtST7789V extDisplay;
 
 // Band effect selector (cycled by left/right keys in action modes)
 extern uint8_t extBandEffect;

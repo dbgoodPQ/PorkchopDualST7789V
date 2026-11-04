@@ -1,7 +1,16 @@
-# External ILI9341 — dual-screen mode
+# External ST7789V — dual-screen mode
+
+> **Ported from ILI9341 to ST7789V.** This fork swaps the external panel to a
+> 240x320 ST7789V (common 2.0"/2.4" modules) using LovyanGFX's built-in
+> `Panel_ST7789` instead of the hand-rolled ILI9341 init table. Wiring and the
+> whole dual-screen UI are unchanged. Key config deltas in `src/ui/ext_display.h`:
+> `invert = true` (ST7789 defaults to inverted) and `freq_write = 40MHz`. If the
+> image is a photo-negative toggle `invert`; if red/blue are swapped toggle
+> `rgb_order`. A 240x240 or 240x135 ST7789V needs its own panel size + offsets
+> and layout rework, since everything here assumes 240x320 landscape.
 
 Stock M5PORKCHOP plus a dual-screen split:
-- External 2.8" ILI9341 (320x240 landscape) = the main show. Action modes
+- External 2.0"/2.4" ST7789V (320x240 landscape) = the main show. Action modes
   (IDLE, OINK, DNH, WARHOG, PIGGYBLUES, SPECTRUM, BACON, FILE_TRANSFER,
   PIGSYNC call, CHARGING) render full-screen, scaled-to-fit (crisp, with thin
   black letterbox bars top/bottom).
@@ -13,7 +22,7 @@ Stock M5PORKCHOP plus a dual-screen split:
   shows the idle pig regardless of which mode you opened the menu from.
 
 ## Files
-- NEW  src/ui/ext_display.h / .cpp  — ILI9341 driver (FSPI/SPI2, bus_shared,
+- NEW  src/ui/ext_display.h / .cpp  — ST7789V driver (FSPI/SPI2, bus_shared,
   rot 7) + dual-screen push helpers + a 240x135 composite buffer for scaling.
 - EDIT src/ui/display.cpp — include; extInit() in Display::init(); pushAll()
   now (a) always pushes native to the built-in screen and (b) pushes a

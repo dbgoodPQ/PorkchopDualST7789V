@@ -18,7 +18,7 @@ static constexpr int BAND_H  = 30;
 static constexpr int TOP_Y   = 0;
 static constexpr int BOT_Y   = SCR_H - BAND_H;   // 210
 
-LGFX_ExtILI9341 extDisplay;
+LGFX_ExtST7789V extDisplay;
 
 // (Scale buffer removed to reclaim ~32KB: strips are scaled straight to the panel.)
 
